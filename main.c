@@ -2,6 +2,11 @@
  * simple note-taking program named 'n0_0t3z'
  * (you can create an alias in your '$HOME/.bashrc' for easier access:))
  */
+/*
+ * TODO:
+ * [] flag to check all current notes and sort them by urgency_lvl (and give a title of each)...
+ * [] open the text_edit (if not specified, use default (vi))
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -134,7 +139,7 @@ int main(int argc, char **argv)
 
         int urgency_lvl = 0; // default urgency_lvl
         if (*++argv) {
-                urgency_lvl = atoi(*++argv);
+                urgency_lvl = atoi(*argv);
         }
 
         // create file
