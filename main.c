@@ -7,9 +7,7 @@
 #include <string.h>
 #include <dirent.h>
 #include <sys/stat.h>
-
 #define DEBUG 0         // 1-true, 0-false
-
 char template[1024] = "\
 author: %s\n\
 date:   %s\n\
@@ -58,22 +56,46 @@ int is_file_name_collides(DIR *dir, char *file_name)
         return -1;
 }
 
-char *get_author(void)
+int get_auth(char *auth)
 {
         char *logname_env = "LOGNAME";
-        char *author = getenv(logname_env);
-        if (!author) {
+        strcpy(auth, getenv(logname_env));
+        if (!auth) {
                 fprintf(stderr, "%s %s\n", "Error: No matching value found in the environment: ", logname_env);
-                strcpy(author, " ");
+                strcpy(auth, " ");
+                return -1;
         }
-        fprintf(stdout, "%s\n", author);
-        return author;
+        return 0;
 }
 
-struct stat st = {0};
+int get_date(char *date)
+{
+        FILE *f_date = popen("date \"+%Y-%m-%d\"", "r");
+        if (!f_date) {
+                fprintf(stderr, "%s\n", "Error: can't determine the date");
+                return -1;
+        }
+        fscanf(f_date, "%s", date);
+        pclose(f_date);
+        return 0;
+}
+
+int get_time(char *time)
+{
+        FILE *f_time = popen("date +%r", "r");
+        if (!f_time) {
+                fprintf(stderr, "%s\n", "Error: can't determine the time");
+                return -1;
+        }
+        fscanf(f_time, "%s", time);
+        pclose(f_time);
+        return 0;
+}
+
 
 int main(int argc, char **argv)
 {
+        struct stat st = {0};
         (void)argc;
         (void)argv;
 /* @production: uncoment this
@@ -110,21 +132,23 @@ int main(int argc, char **argv)
                 perror("fopen");
                 exit(1);
         }
-        char *author = get_author();
+        char *auth = (char *) malloc(128*sizeof(char)); // TODO: check malloc
+        get_auth(auth);
 
-        char date[2<<6] = {0};
-        FILE *f_date = popen("date \"+%Y-%m-%d\"", "r");
-        if (!f_date) {
-                fprintf(stderr, "%s\n", "Error: can't determine the date");
-        }
-        fscanf(f_date, "%s", date);
-        pclose(f_date);
+        char *date = (char *) malloc(128*sizeof(char));
+        get_date(date);
+
+        char *title = (char *) malloc(255*sizeof(char));
+        strcpy(title, "__title__"); // *++argv;
+
+        char *time = (char *) malloc(255*sizeof(char));
+        get_time(time);
 
         // constructing final_template
         char final_template[1024<<8];
-        snprintf(final_template, sizeof(final_template), template, author, date, "", "", "");
-        fprintf(stdout, "%s", final_template);
 
+        snprintf(final_template, sizeof(final_template), template, auth, date, time, title, "");
+        fprintf(stdout, "%s", final_template);
 
         // write into it (with tamplate)
         fprintf(file, "%s", final_template);
@@ -134,6 +158,11 @@ int main(int argc, char **argv)
         // ...
 
         closedir(dir); // TODO: check when i really need to close it...
-        printf("%s\n", path);
+        fprintf(stdout, "%s\n", path);
+        free(auth);
+        free(date);
+        free(title);
+        free(time);
+        fprintf(stdout, "%s\n", "FIN");
         return 0;
 }
