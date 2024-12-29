@@ -7,13 +7,16 @@
 #include <string.h>
 #include <dirent.h>
 #include <sys/stat.h>
+
 #define DEBUG 0         // 1-true, 0-false
+
 char template[1024] = "\
+urgency_lvl: %d (0 - 10)\n\
 author: %s\n\
 date:   %s\n\
 time:   %s\n\
-  TITLE:   %s\n\
-  CONTENT: %s\n\n\n\
+\t\tTITLE:   %s\n\
+\t\tCONTENT: %s\n\n\n\
 ";
 
 char *fill_path(char *full_path)
@@ -53,7 +56,7 @@ int is_file_name_collides(DIR *dir, char *file_name)
                         return 1;
                 }
         }
-        return -1;
+        return 0;
 }
 
 int get_auth(char *auth)
@@ -95,20 +98,18 @@ int get_time(char *time)
 
 int main(int argc, char **argv)
 {
-        struct stat st = {0};
-        (void)argc;
-        (void)argv;
-/* @production: uncoment this
-        if (argc < 2) {
-                fprintf(stderr, "%s\n", "usage: n0_0t3z <file_name>");
+        char *usage_str = "usage: n0_0t3z <file_name> <title> [<urgency_lvl>] [<editor_name>]";
+        if (argc < 3) {
+                fprintf(stderr, "%s\n", usage_str);
                 exit(1);
         }
-*/
-        char *file_name = "change_in_the_code"; //*++argv;
+
+        char *file_name = *++argv;
         char full_path[1024];
         char *path = fill_path(full_path);
 
         // check the directory
+        struct stat st = {0};
         if (stat(path, &st) == -1) {
                 mkdir(path, 0700);
         }
@@ -118,12 +119,24 @@ int main(int argc, char **argv)
                 fprintf(stderr, "%s %s\n", "Error: can't open the directory: ", path);
                 exit(1);
         }
-/* @production: uncoment this
+
         if (is_file_name_collides(dir, file_name)) {
                 fprintf(stderr, "%s%s%s\n", "Error: can't use '", file_name, "' file name, file already exists");
                 exit(1);
         }
- */
+
+        char *title = (char *) malloc(255*sizeof(char));
+        if (!title) {
+                fprintf(stderr, "%s\n", "Error: can't malloc for title:(");
+                exit(1);
+        }
+        strcpy(title, *++argv);
+
+        int urgency_lvl = 0; // default urgency_lvl
+        if (*++argv) {
+                urgency_lvl = atoi(*++argv);
+        }
+
         // create file
         sprintf(full_path, "%s/%s", path, file_name);
         FILE *file = fopen(full_path, "w");
@@ -132,7 +145,8 @@ int main(int argc, char **argv)
                 perror("fopen");
                 exit(1);
         }
-        char *auth = (char *) malloc(128*sizeof(char)); // TODO: check malloc
+
+        char *auth = (char *) malloc(128*sizeof(char));
         if (!auth) {
                 fprintf(stderr, "%s\n", "Error: can't malloc for auth:(");
                 exit(1);
@@ -146,13 +160,6 @@ int main(int argc, char **argv)
         }
         get_date(date);
 
-        char *title = (char *) malloc(255*sizeof(char));
-        if (!title) {
-                fprintf(stderr, "%s\n", "Error: can't malloc for title:(");
-                exit(1);
-        }
-        strcpy(title, "__title__"); // *++argv;
-
         char *time = (char *) malloc(255*sizeof(char));
         if (!time) {
                 fprintf(stderr, "%s\n", "Error: can't malloc for time:(");
@@ -162,8 +169,7 @@ int main(int argc, char **argv)
 
         // constructing final_template
         char final_template[1024<<8];
-
-        snprintf(final_template, sizeof(final_template), template, auth, date, time, title, "");
+        snprintf(final_template, sizeof(final_template), template, urgency_lvl, auth, date, time, title, "");
         fprintf(stdout, "%s", final_template);
 
         // write into it (with tamplate)
