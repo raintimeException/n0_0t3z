@@ -10,26 +10,22 @@
 
 #define DEBUG 0         // 1-true, 0-false
 
-const char *template = "\
-author: \n\
-time: \n\
-calend: \n\
-        ************\n\
-        ************\n\
-        ************\n\
-        ************\n\
-  TITLE: \n\
-  CONTENT: \n\
-        ... \n\
+char template[1024] = "\
+author: %s\n\
+date:   %s\n\
+time:   %s\n\
+  TITLE:   %s\n\
+  CONTENT: %s\n\n\n\
 ";
 
 char *fill_path(char *full_path)
 {
         char *dir_name = "notes";
-        char *HOME = getenv("HOME");
+        char *home_env = "HOME";
+        char *HOME = getenv(home_env);
 
         if (!HOME) {
-                fprintf(stderr, "%s", "Error: No matching value found in the environment.\n");
+                fprintf(stderr, "%s %s", "Error: No matching value found in the environment: ", home_env);
                 exit(1);
         }
         sprintf(full_path, "%s/%s", HOME, dir_name);
@@ -62,15 +58,22 @@ int is_file_name_collides(DIR *dir, char *file_name)
         return -1;
 }
 
+char *get_author(void)
+{
+        char *logname_env = "LOGNAME";
+        char *author = getenv(logname_env);
+        if (!author) {
+                fprintf(stderr, "%s %s\n", "Error: No matching value found in the environment: ", logname_env);
+                strcpy(author, " ");
+        }
+        fprintf(stdout, "%s\n", author);
+        return author;
+}
+
 struct stat st = {0};
 
 int main(int argc, char **argv)
 {
-#if DEBUG == 1
-        fprintf(stdout, "%s\n", "==> TEMPLATE <==");
-        fprintf(stdout, "%s", template);
-        fprintf(stdout, "%s\n", "==> TEMPLATE <==");
-#endif
         (void)argc;
         (void)argv;
 /* @production: uncoment this
@@ -107,10 +110,24 @@ int main(int argc, char **argv)
                 perror("fopen");
                 exit(1);
         }
-        // for tamplate use other programs (cal, date...)
+        char *author = get_author();
+
+        char date[2<<6] = {0};
+        FILE *f_date = popen("date \"+%Y-%m-%d\"", "r");
+        if (!f_date) {
+                fprintf(stderr, "%s\n", "Error: can't determine the date");
+        }
+        fscanf(f_date, "%s", date);
+        pclose(f_date);
+
+        // constructing final_template
+        char final_template[1024<<8];
+        snprintf(final_template, sizeof(final_template), template, author, date, "", "", "");
+        fprintf(stdout, "%s", final_template);
+
 
         // write into it (with tamplate)
-        fprintf(file, "%s", template);
+        fprintf(file, "%s", final_template);
 
         // open a default text editor
         // let write a note
