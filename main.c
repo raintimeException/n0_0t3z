@@ -23,23 +23,23 @@ calend: \n\
         ... \n\
 ";
 
-char *dir_name = "notes";
-
 char *fill_path(char *full_path)
 {
+        char *dir_name = "notes";
         char *HOME = getenv("HOME");
+
         if (!HOME) {
-                printf("Error: No matching value found in the environment.\n");
+                fprintf(stderr, "%s", "Error: No matching value found in the environment.\n");
                 exit(1);
         }
         sprintf(full_path, "%s/%s", HOME, dir_name);
         return full_path;
 }
 
-struct dirent *ent = {0};
 int is_file_name_collides(DIR *dir, char *file_name)
 {
         int i;
+        struct dirent *ent = {0};
         int count_in_dir_assumed = 1024<<8;
         char *file_names[count_in_dir_assumed];
 
@@ -48,12 +48,12 @@ int is_file_name_collides(DIR *dir, char *file_name)
         }
         file_names[++i] = NULL;
 #if DEBUG == 1
-        printf("files in the directory: \n");
+        fprintf(stdout, "%s", "files in the directory: \n");
 #endif
         // TODO: implement more sophisticated search
         for (i = 0; file_names[i] != NULL; ++i) {
 #if DEBUG == 1
-                printf("==>\t%s\n", file_names[i]);
+                fprintf(stdout, "==>\t%s\n", file_names[i]);
 #endif
                 if (strcmp(file_names[i], file_name) == 0) {
                         return 1;
@@ -67,15 +67,15 @@ struct stat st = {0};
 int main(int argc, char **argv)
 {
 #if DEBUG == 1
-        printf("==> TEMPLATE <==\n");
-        printf("%s", template);
-        printf("==> TEMPLATE <==\n");
+        fprintf(stdout, "%s\n", "==> TEMPLATE <==");
+        fprintf(stdout, "%s", template);
+        fprintf(stdout, "%s\n", "==> TEMPLATE <==");
 #endif
         (void)argc;
         (void)argv;
 /* @production: uncoment this
         if (argc < 2) {
-                printf("usage: n0_0t3z <file_name>\n");
+                fprintf(stderr, "%s\n", "usage: n0_0t3z <file_name>");
                 exit(1);
         }
 */
@@ -90,16 +90,15 @@ int main(int argc, char **argv)
 
         DIR *dir = opendir(path);
         if (!dir) {
-                printf("Error: can't open the directory: %s\n", path);
+                fprintf(stderr, "%s %s\n", "Error: can't open the directory: ", path);
                 exit(1);
         }
 /* @production: uncoment this
         if (is_file_name_collides(dir, file_name)) {
-                printf("Error: can't use '%s' file name, file already exists\n", file_name);
+                fprintf(stderr, "%s%s%s\n", "Error: can't use '", file_name, "' file name, file already exists");
                 exit(1);
         }
-*/
-
+ */
         // create file
         sprintf(full_path, "%s/%s", path, file_name);
         FILE *file = fopen(full_path, "w");
