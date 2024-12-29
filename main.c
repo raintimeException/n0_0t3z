@@ -128,20 +128,36 @@ int main(int argc, char **argv)
         sprintf(full_path, "%s/%s", path, file_name);
         FILE *file = fopen(full_path, "w");
         if (!file) {
-                printf("Error: can't open a file: %s\n", path);
+                fprintf(stderr, "%s%s\n", "Error: can't open a file: ", path);
                 perror("fopen");
                 exit(1);
         }
         char *auth = (char *) malloc(128*sizeof(char)); // TODO: check malloc
+        if (!auth) {
+                fprintf(stderr, "%s\n", "Error: can't malloc for auth:(");
+                exit(1);
+        }
         get_auth(auth);
 
         char *date = (char *) malloc(128*sizeof(char));
+        if (!date) {
+                fprintf(stderr, "%s\n", "Error: can't malloc for date:(");
+                exit(1);
+        }
         get_date(date);
 
         char *title = (char *) malloc(255*sizeof(char));
+        if (!title) {
+                fprintf(stderr, "%s\n", "Error: can't malloc for title:(");
+                exit(1);
+        }
         strcpy(title, "__title__"); // *++argv;
 
         char *time = (char *) malloc(255*sizeof(char));
+        if (!time) {
+                fprintf(stderr, "%s\n", "Error: can't malloc for time:(");
+                exit(1);
+        }
         get_time(time);
 
         // constructing final_template
