@@ -2,6 +2,6 @@
 
 set -xe
 
-cc -Wall -Wextra -pedantic -o app main.c
+cc -O3 -Wall -Wextra -pedantic -o n0_0t3z main.c
 
-./app
+./n0_0t3z
