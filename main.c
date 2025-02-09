@@ -1,10 +1,6 @@
 /*
  * simple note-taking program named 'n0_0t3z'
  * (you can create an alias in your '$HOME/.bashrc' for easier access:))
- *
- * todo:
- *  - usage: n0_0t3z file_name (just this and nothing more...)
- *  - flag to check all current notes and sort them by urgency_lvl (and give a title of each)...
  */
 
 #define n0_0t3z_IMPLEMENTATION
@@ -12,8 +8,8 @@
 
 int main(int argc, char **argv)
 {
-    char *usage_str = "usage: n0_0t3z <file_name> <title> [<urgency_lvl>] [<editor_name>]";
-    if (argc < 3) {
+    char *usage_str = "usage: n0_0t3z <file_name> <title> [<urgency_lvl>] [<editor_name>]\nusage: n0_0t3z <file_name>";
+    if (argc < 2) {
         fprintf(stderr, "%s\n", usage_str);
         exit(1);
     }
@@ -24,110 +20,76 @@ int main(int argc, char **argv)
         exit(-1);
     }
 
-    t_full_path *t_full_path = malloc(sizeof(t_full_path));
-    if (!t_full_path) {
+    n_set_templ(n);
+
+    t_path *t_p = (t_path*)malloc(sizeof(t_path));
+    if (!t_p) {
         fprintf(stderr, "ERROR: cannot malloc in n_fill_full_path\n");
         exit(-1);
     }
-    n_fill_full_path(t_full_path, *++argv);
 
-    // check the directory
-    struct stat st = {0};
-    char default_dir[DEFAULT_SIZE];
-    sprintf(default_dir, "%s/%s", t_full_path->home, (char *) t_full_path->dir);
-    if (stat(default_dir, &st) == -1) {
-            mkdir(default_dir, 0700);
+    n_fill_full_path(t_p, argv[1]);
+    n_check_dir(t_p);
+
+    if (argc > 2) {
+        strcpy(n->title, argv[2]);
+    } else {
+        strcpy(n->title, t_p->file_name);
     }
-    printf("default_dir: %s\n", default_dir);
-    printf("%s\n", t_full_path->full_path);
-    return 0;
 
-/*
+    // n0_0t3z <file_name> <title> [<urgency_lvl>] [<editor_name>]
+    //  1 (0)     2 (1)     3 (2)      4 (3)          5 (4)
 
-    if (!title) {
-            exit(1);
-    }
-    strcpy(title, *++argv);
-
-    int urgency_lvl = 0; // default urgency_lvl
-    if (*++argv) {
-            urgency_lvl = atoi(*argv);
+    n->urgency_lvl = 0; // default urgency_lvl
+    if (argc > 3) {
+        n->urgency_lvl = atoi(argv[3]);
     }
 
     // create file
-    FILE *file = fopen(strcat(, "w");
+    FILE *file = fopen(t_p->full_path, "w");
     if (!file) {
-            fprintf(stderr, "%s%s\n", "Error: can't open a file: ", path);
-            perror("fopen");
-            exit(1);
+        fprintf(stderr, "%s%s\n", "Error: can't open a file: ", t_p->full_path);
+        perror("fopen");
+        exit(1);
     }
 
-    if (!auth) {
-            fprintf(stderr, "%s\n", "Error: can't malloc for auth:(");
-            exit(1);
+    n_set_auth(n);
+    if (strcmp(n->auth, "") == 0) {
+        fprintf(stderr, "%s%s\n", "Error: auth: ", n->auth);
+        exit(1);
     }
-    get_auth(auth);
 
-    if (!date) {
-            exit(1);
+    n_set_date(n);
+    if (strcmp(n->date, "") == 0) {
+        fprintf(stderr, "%s%s\n", "Error: date: ", n->date);
+        exit(1);
     }
-    get_date(date);
 
-    if (!_time) {
-            fprintf(stderr, "%s\n", "Error: can't malloc for time:(");
-            exit(1);
+    n_set_time(n);
+    if (strcmp(n->time, "") == 0) {
+        fprintf(stderr, "%s%s\n", "Error: time: ", n->time);
+        exit(1);
     }
-    get_time(_time);
 
     // constructing final_template
     char final_template[DEFAULT_SIZE<<8];
-    snprintf(final_template, sizeof(final_template), n->templ, urgency_lvl, auth, date, _time, title, "");
-
-#if LOG_INFO == 1
-    fprintf(stdout, "%s", final_template);
-#endif
+    snprintf(final_template, sizeof(final_template), n->templ, n->urgency_lvl, n->auth, n->date, n->time, n->title, "");
 
     // write into it (with tamplate)
     fprintf(file, "%s", final_template);
     fflush(file);
     fclose(file);
-    closedir(dir);
 
-    char *editor_name = *++argv;
-    if (editor_name == NULL) {
-            fprintf(stderr, "%s\n", "Warn: The name of the text editor has not been provided");
-            editor_name = getenv("EDITOR");
+    char *editor_name;
+    if (argc < 5) {
+        fprintf(stdout, "%s\n", "Warn: The name of the text editor has not been provided");
+        editor_name = getenv("EDITOR");
+    } else {
+        editor_name = argv[4];
     }
+    n_set_editor(t_p, editor_name);
 
-    // using default editor to take a note
-    if (!editor_name) {
-            fprintf(stderr, "%s\n", "Error: Can't get the default editor");
-            fprintf(stderr, "%s\n", "Possible solution: check the env variable, execute: $> printenv | grep EDITOR");
-            exit(1);
-    }
-
-    char *full_editor_comm = (char *) malloc(sizeof(full_path)*2);
-    sprintf(full_editor_comm, "%s %s", editor_name, full_path);
-
-    if (system(full_editor_comm) != 0) {
-            fprintf(stderr, "%s\n", "Error: Can't run editor");
-            perror("system");
-            exit(1);
-    }
-
-#if LOG_INFO == 1
-    fprintf(stdout, "%s\n", path);
-#endif
-
-    free(auth);
-    free(date);
-    free(title);
-    free(_time);
-    free(full_editor_comm);
-
-#if LOG_INFO == 1
-    fprintf(stdout, "%s\n", "FIN");
-#endif
+    free(t_p);
+    free(n);
     return 0;
-    */
 }
