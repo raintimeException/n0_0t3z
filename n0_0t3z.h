@@ -60,7 +60,7 @@ void n_check_dir(t_path *t_p)
 {
     struct stat st = {0};
     char default_dir[DEFAULT_SIZE];
-    sprintf(default_dir, "%s/%s", t_p->home, (char *) t_p->dir);
+    sprintf(default_dir, "%s/%s", t_p->home, t_p->dir);
     if (stat(default_dir, &st) == -1) {
         mkdir(default_dir, 0700);
     }
